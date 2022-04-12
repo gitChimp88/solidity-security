@@ -15,8 +15,11 @@ contract ExerciseC6B {
     /********************************************************************************************/
 
 
-    address private contractOwner;                  // Account used to deploy contract
+    address private contractOwner;               // Account used to deploy contract
+    mapping(address => uint256) private sales;
 
+    uint256 private enabled = block.timestamp;
+    uint256 private counter = 1;
 
     constructor
                 (
@@ -42,10 +45,32 @@ contract ExerciseC6B {
         _;
     }
 
+    modifier rateLimit(uint time) {
+        require(block.timestamp >= enabled, 'Rate limiting in effect');
+        enabled = add(enabled, time);
+        _;
+    }
+
+    modifier entrancyGuard(){
+        counter = add(counter, 1);
+        uin256 guard = counter;
+        _;
+        require(guard == counter, "That is not allowed");
+    }
+
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
+    function safeWithdraw(uint256 _valueToWithdraw) external entrancyGuard rateLimit(30) {
+        // require(sales[msg.sender] >= 100);
+        require(msg.sender == tx.origin, "Contracts not allowed");
+        require(sales[msg.sender] >= _valueToWithdraw, 'insufficient funds');
 
+        uint256 previousBalance = sales[msg.sender];
+        sales[msg.sender] = sub(previousBalance, _valueToWithdraw);
+
+        msg.sender.transfer(_valueToWithdraw);
+    }
 
     
 }
